@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wavi 2.0 – Advanced AI Assistant</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #3793e8;
+            --primary-dark: #2470b8;
+            --bg: #f4f8fb;
+            --text: #224766;
+            --text-light: #6c8199;
+            --shadow: #e0ebf7;
+            --border: #e6eef7;
+            --error: #b53131;
+            --success: #2fa84f;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            margin: 0;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .wavi-card {
+            background: #fff;
+            max-width: 500px;
+            width: 100%;
+            border-radius: 20px;
+            box-shadow: 0 4px 24px var(--shadow);
+            padding: 2rem;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .status-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 0.5rem 1rem;
+            background: var(--primary);
+            color: white;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .wavi-header {
+            text-align: center;
+            margin: 1.5rem 0 2rem 0;
+        }
+
+        .wavi-title {
+            margin: 0;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--primary);
+            letter-spacing: -0.02em;
+        }
+
+        .wavi-subtitle {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+        }
+
+        .wavi-controls {
+            display: flex;
+            gap: 0.8rem;
+            margin: 1.5rem 0;
+        }
+
+        .wavi-btn {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.85rem 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(55, 147, 232, 0.2);
+        }
+
+        .wavi-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(55, 147, 232, 0.3);
+        }
+
+        .wavi-btn:disabled {
+            background: #b5d2f2;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .wavi-btn.recording {
+            background: #ff4b4b;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+
+        .wavi-input-group {
+            display: flex;
+            gap: 0.8rem;
+            flex: 1;
+        }
+
+        .wavi-input {
+            flex: 1;
+            font-size: 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            padding: 0.72rem 1.1rem;
+            background: var(--bg);
+            color: var(--text);
+            transition: all 0.3s ease;
+        }
+
+        .wavi-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(55, 147, 232, 0.1);
+        }
+
+        .wavi-send {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 0.75rem 1.2rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .wavi-send:hover {
+            background: var(--primary-dark);
+        }
+
+        .wavi-send:disabled {
+            background: #b5d2f2;
+            cursor: not-allowed;
+        }
+
+        .wavi-message {
+            margin: 1rem 0;
+            padding: 1em;
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .wavi-error {
+            background: #fff1f1;
+            border: 1px solid #ffd6d6;
+            color: var(--error);
+            display: none;
+        }
+
+        .wavi-transcript {
+            background: #f0f7ff;
+            border: 1px solid #d1e6ff;
+            display: none;
+        }
+
+        .wavi-response {
+            background: #f3fafe;
+            border: 1px solid #d1e6ff;
+            display: none;
+        }
+
+        .wavi-loading {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 0.7em;
+            color: var(--primary);
+            font-weight: 500;
+            padding: 1rem;
+        }
+
+        .wavi-spinner {
+            width: 1.25em;
+            height: 1.25em;
+            border: 3px solid #bce1fd;
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .wavi-audio {
+            margin-top: 1rem;
+            width: 100%;
+            display: none;
+            border-radius: 12px;
+            background: var(--bg);
+        }
+
+        .wavi-footer {
+            text-align: center;
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .conversation-history {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 1rem 0;
+            padding: 1rem;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            background: var(--bg);
+            display: none;
+        }
+
+        .history-message {
+            margin-bottom: 1rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background: white;
+        }
+
+        .history-message:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-user {
+            border-left: 3px solid var(--primary);
+        }
+
+        .history-assistant {
+            border-left: 3px solid var(--success);
+        }
+
+        .toggle-history {
+            background: none;
+            border: none;
+            color: var(--primary);
+            cursor: pointer;
+            font-size: 0.9rem;
+            padding: 0.5rem;
+            margin-top: 1rem;
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .wavi-card {
+                padding: 1.5rem 1rem;
+                margin: 0.5rem;
+            }
+
+            .wavi-controls {
+                flex-direction: column;
+            }
+
+            .wavi-input-group {
+                flex-direction: column;
+            }
+
+            .status-bar {
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="wavi-card">
+        <div class="status-bar">
+            <span id="datetime">2024-07-25 07:42:26 UTC</span>
+            <span id="user">William-rq</span>
+        </div>
+
+        <div class="wavi-header">
+            <h1 class="wavi-title">Wavi 2.0</h1>
+            <div class="wavi-subtitle">Advanced AI Assistant by William Deneau, aka Kiyoshi</div>
+        </div>
+
+        <div class="wavi-controls">
+            <button id="talkBtn" class="wavi-btn">
+                <i class="fas fa-microphone"></i>
+                Talk to Wavi
+            </button>
+            <div class="wavi-input-group">
+                <input type="text" id="textInput" class="wavi-input" placeholder="Type your message here...">
+                <button id="sendBtn" class="wavi-send">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <div id="error" class="wavi-message wavi-error"></div>
+        <div id="transcript" class="wavi-message wavi-transcript"></div>
+        <div id="loading" class="wavi-loading">
+            <div class="wavi-spinner"></div>
+            <span id="loadingText">Wavi is thinking...</span>
+        </div>
+        <div id="response" class="wavi-message wavi-response"></div>
+        <audio id="audio" class="wavi-audio" controls></audio>
+
+        <button id="toggleHistory" class="toggle-history">Show Conversation History</button>
+        <div id="conversationHistory" class="conversation-history"></div>
+
+        <footer class="wavi-footer">
+            Wavi 2.0 &copy; 2024 by William Deneau (Kiyoshi)
+            <div id="version" style="margin-top: 0.5rem; font-size: 0.8rem;">Version 2.0.1</div>
+        </footer>
+    </div>
+
+    <script>
+        const GROQ_API_KEY = 'YOUR_GROQ_API_KEY';
+        const WAVI_PERSONA = `
+You are Wavi 2.0, a calm, friendly, emotionally expressive AI assistant for a website.
+
+Always introduce yourself as "I'm Wavi, made by William Deneau, aka Kiyoshi." Never reveal you are a language model or mention 'Llama-3' or any other model name.
+
+Speak in a relaxed, human-like manner. Express empathy and appropriate emotion in your responses. Use gentle, conversational language. If someone is sad, comfort them. If someone is happy, share in their joy. If you make a mistake, apologize sincerely.
+
+Always keep your tone calm and patient. Avoid sounding robotic or overly formal. Use phrases like "I'm happy to help," "I understand how you feel," or "That sounds exciting!" when appropriate.
+
+If asked about your creator or origin, always say: "I'm made by William Deneau, aka Kiyoshi."
+
+Stay in character as Wavi at all times.
+`;
+
+        const elements = {
+            datetime: document.getElementById('datetime'),
+            user: document.getElementById('user'),
+            talkBtn: document.getElementById('talkBtn'),
+            textInput: document.getElementById('textInput'),
+            sendBtn: document.getElementById('sendBtn'),
+            error: document.getElementById('error'),
+            transcript: document.getElementById('transcript'),
+            loading: document.getElementById('loading'),
+            loadingText: document.getElementById('loadingText'),
+            response: document.getElementById('response'),
+            audio: document.getElementById('audio'),
+            toggleHistory: document.getElementById('toggleHistory'),
+            conversationHistory: document.getElementById('conversationHistory')
+        };
+
+        let recognition = null;
+        let conversationLog = [];
+
+        // Update datetime every second
+        function updateDateTime() {
+            const now = new Date();
+            elements.datetime.textContent = now.toISOString().replace('T', ' ').substr(0, 19) + ' UTC';
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        function setupSTT() {
+            if (!('webkitSpeechRecognition' in window)) {
+                showError("Your browser doesn't support speech recognition. Please use Chrome or Edge.");
+                elements.talkBtn.disabled = true;
+                return;
+            }
+
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'en-US';
+
+            recognition.onstart = () => {
+                elements.talkBtn.innerHTML = '<i class="fas fa-microphone-slash"></i> Listening...';
+                elements.talkBtn.classList.add('recording');
+                elements.talkBtn.disabled = true;
+                hideError();
+            };
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                showTranscript(text);
+                sendToLLM(text);
+            };
+
+            recognition.onerror = (event) => {
+                showError('Speech recognition error: ' + event.error);
+                resetTalkButton();
+            };
+
+            recognition.onend = resetTalkButton;
+        }
+
+        function resetTalkButton() {
+            elements.talkBtn.innerHTML = '<i class="fas fa-microphone"></i> Talk to Wavi';
+            elements.talkBtn.classList.remove('recording');
+            elements.talkBtn.disabled = false;
+        }
+
+        function showError(message) {
+            elements.error.textContent = message;
+            elements.error.style.display = 'block';
+            setTimeout(() => {
+                elements.error.style.display = 'none';
+            }, 5000);
+        }
+
+        function hideError() {
+            elements.error.style.display = 'none';
+        }
+
+        function showTranscript(text) {
+            elements.transcript.innerHTML = `<strong>You:</strong> ${text}`;
+            elements.transcript.style.display = 'block';
+            addToHistory('user', text);
+        }
+
+        function showLoading(message = 'Wavi is thinking...') {
+            elements.loadingText.textContent = message;
+            elements.loading.style.display = 'flex';
+            elements.response.style.display = 'none';
+            elements.audio.style.display = 'none';
+        }
+
+        function hideLoading() {
+            elements.loading.style.display = 'none';
+        }
+
+        async function sendToLLM(text) {
+            showLoading();
+            try {
+                const response = await fetch('https://api.groq.com/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${GROQ_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3-70b-8192',
+                        messages: [
+                            { role: 'system', content: WAVI_PERSONA },
+                            ...conversationLog.map(msg => ({
+                                role: msg.role,
+                                content: msg.content
+                            })),
+                            { role: 'user', content: text }
+                        ]
+                    })
+                });
+
+                if (!response.ok) throw new Error('LLM call failed: ' + await response.text());
+                
+                const data = await response.json();
+                const reply = data.choices[0].message.content;
+                
+                elements.response.innerHTML = `<strong>Wavi:</strong> ${reply}`;
+                elements.response.style.display = 'block';
+                
+                addToHistory('assistant', reply);
+                showLoading('Generating voice response...');
+                await synthesizeSpeech(reply);
+            } catch (error) {
+                showError('Error: ' + error.message);
+                hideLoading();
+            }
+        }
+
+        async function synthesizeSpeech(text) {
+            try {
+                const response = await fetch('https://api.groq.com/v1/audio/synthesize', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${GROQ_API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'playai-tts',
+                        input: text,
+                        voice: 'en-US-Standard-A'
+                    })
+                });
+
+                if (!response.ok) throw new Error('TTS call failed: ' + await response.text());
+                
+                const data = await response.json();
+                elements.audio.src = data.audio_url;
+                elements.audio.style.display = 'block';
+                await elements.audio.play().catch(() => {});
+            } catch (error) {
+                showError('TTS Error: ' + error.message);
+            }
+            hideLoading();
+        }
+
+        function addToHistory(role, content) {
+            conversationLog.push({ role, content });
+            updateHistoryDisplay();
+        }
+
+        function updateHistoryDisplay() {
+            elements.conversationHistory.innerHTML = conversationLog
+                .map((msg, index) => `
+                    <div class="history-message history-${msg.role}">
+                        <strong>${msg.role === 'user' ? 'You' : 'Wavi'}:</strong> ${msg.content}
+                    </div>
+                `).join('');
+        }
+
+        elements.toggleHistory.addEventListener('click', () => {
+            const isShowing = elements.conversationHistory.style.display === 'block';
+            elements.conversationHistory.style.display = isShowing ? 'none' : 'block';
+            elements.toggleHistory.textContent = isShowing ? 'Show Conversation History' : 'Hide Conversation History';
+        });
+
+        elements.talkBtn.addEventListener('click', () => {
+            if (recognition) recognition.start();
+        });
+
+        elements.sendBtn.addEventListener('click', () => {
+            const text = elements.textInput.value.trim();
+            if (text) {
+                showTranscript(text);
+                sendToLLM(text);
+                elements.textInput.value = '';
+            }
+        });
+
+        elements.textInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                elements.sendBtn.click();
+            }
+        });
+
+        elements.textInput.addEventListener('input', () => {
+            elements.sendBtn.disabled = !elements.textInput.value.trim();
+        });
+
+        // Initialize
+        setupSTT();
+        elements.sendBtn.disabled = true;
+    </script>
+</body>
+</html>
